@@ -13,8 +13,8 @@ library(dplyr)
 library(aniMotum)
 
 # source ssm diagnostic plot function
-source('./READ-PSB-MoveSeals/src/fxn_ssm_plot_diagnostics.R')
-
+source('./READ-PSB-MoveSeals/src/fxns_helper.R')
+rm(volras, split_at_gap)
 
 # load data (locs and dive data)
 dives = read.csv("./data/L1/dive/Hg_2019-2023_BEHDiveRecords_QAQC.csv", stringsAsFactors = F)
@@ -122,6 +122,10 @@ rm(list = setdiff(ls(), c('anilocs', 'divesinseg', 'dives')))
 head(divesinseg)
 rownames(divesinseg) = NULL
 rownames(anilocs) = NULL
+
+# get dive sample size for pre-construction period
+nrow(divesinseg[divesinseg$mid_dive_dt < as.POSIXct('2023-06-01', tz = 'UTC'),])
+
 ##################################################################################################
 
 ####### step 2: fit a model using each segid and use a vector of dive times instead of a regularized time step 

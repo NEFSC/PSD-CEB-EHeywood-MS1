@@ -104,11 +104,21 @@ library(mixR)
 x = dives$PW50
 
 # xbeta = x
+# xbeta[xbeta>=1] = 0.99
+# test = em_beta_mixture(y = xbeta, k = 2)
+# plot_beta_mixture(y = xbeta, fit = test, bins = 50)
+# xbeta = x
 # xbeta[xbeta >1] = 1
 # dives$x = dives$PW50
-# dives$x[dives$x>1]=1
+# dives$x[dives$x>=1]=0.99
+# dives$ptt = sapply(strsplit(dives$id, '-'), '[[', 1)
 # oneset = dives[dives$ptt == dives$ptt[1],]
-# betamm = betareg::betamix(formula = x ~ 1 | 1, data = oneset, k = 2)
+# betamm = betareg::betamix(formula = x ~ 1 | 1, data = oneset, k = 2, )
+# mu <- plogis(coef(betamm)[,1])
+# phi <- exp(coef(betamm)[,2])
+# 
+# a = mu * phi
+# b = (1-mu) * phi
 
 # fit diff dist families
 lnmm <- mixR::mixfit(x = x, ncomp = 2, family = 'lnorm')
@@ -154,28 +164,28 @@ ggsave(filename = './plots/manuscript/AnimalBiotelemetrySubmission/SupplementalM
        plot = comb, 
        device = 'pdf', width = 1000, height = 900, units = 'px', scale = 3)
 
-# # PLOT K= 3
-# wmm3 <- mixR::mixfit(x = x, ncomp = 4, family = 'weibull')
-# gmm3 <- mixR::mixfit(x = x, ncomp = 3, family = 'gamma')
-# plot(wmm3)
-# 
-# p43 <- plot(gmm3, title = 'Gamma Mixture k=3', 
-#            legend.position = 'none', 
-#            xlab = '% Water column reached at max dive depth', trans = 0.4)+ 
-#   scale_fill_manual(values = c("cornflowerblue",'red','darkblue'))+
-#   annotate(geom = 'text', x = 0.2, y = 4,label = paste0('BIC = ', round(gmm3$bic), 0)) +
-#   coord_cartesian(xlim = c(0,1.2), ylim = c(0,5))
-# p43
-# p33 <- plot(wmm3, title = 'Weibull Mixture k=3', 
-#             legend.position = 'none', 
-#             xlab = '% Water column reached at max dive depth', trans = 0.4)+ 
-#   scale_fill_manual(values = c("cornflowerblue",'red','darkblue'))+
-#   annotate(geom = 'text', x = 0.2, y = 4,label = paste0('BIC = ', round(wmm3$bic), 0)) +
-#   coord_cartesian(xlim = c(0,1.2), ylim = c(0,5))
-# p33
-# # plot
-# 
-# gridExtra::grid.arrange(p1, p2, p3, p4, nrow = 2) 
+# PLOT K= 3
+wmm3 <- mixR::mixfit(x = x, ncomp = 3, family = 'weibull')
+gmm3 <- mixR::mixfit(x = x, ncomp = 3, family = 'gamma')
+plot(wmm3)
+
+p43 <- plot(gmm3, title = 'Gamma Mixture k=3', 
+           legend.position = 'none', 
+           xlab = '% Water column reached at max dive depth', trans = 0.4)+ 
+  scale_fill_manual(values = c("cornflowerblue",'red','darkblue'))+
+  annotate(geom = 'text', x = 0.2, y = 4,label = paste0('BIC = ', round(gmm3$bic), 0)) +
+  coord_cartesian(xlim = c(0,1.2), ylim = c(0,5))
+p43
+p33 <- plot(wmm3, title = 'Weibull Mixture k=3', 
+            legend.position = 'none', 
+            xlab = '% Water column reached at max dive depth', trans = 0.4)+ 
+  scale_fill_manual(values = c("cornflowerblue",'red','darkblue'))+
+  annotate(geom = 'text', x = 0.2, y = 4,label = paste0('BIC = ', round(wmm3$bic), 0)) +
+  coord_cartesian(xlim = c(0,1.2), ylim = c(0,5))
+p33
+# plot
+
+gridExtra::grid.arrange(p1, p2, p3, p4, nrow = 2) 
 
 
 # Model selection

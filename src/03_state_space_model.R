@@ -15,6 +15,7 @@ library(parallel)
 # use patchwork model fit plot diagnostics
 library(patchwork)
 
+rm(list = ls())
 
 ################################################## load data ######################################################
 setwd('~/seal_telemetry/')    
@@ -27,6 +28,17 @@ setwd('~/seal_telemetry/')
 df = read_csv("./data/L1/locs/HG_2019-2023_HAULOUT_TRIPID_ASSIGNMENT.csv") %>%
   arrange(id, datetime)
 
+# look at the location ping rate 
+pingrate = df %>% filter(!is.na(SegID)) %>% group_by(SegID) %>% arrange(datetime) %>%
+  mutate(tdiff = difftime(time1 = datetime, time2 = lag(datetime, n = 1), tz = "UTC", units = 'sec')) %>% 
+  dplyr::select(SegID, datetime, tdiff) %>% ungroup() %>%
+  group_by(SegID) %>%
+  summarise(meantdiff = mean(tdiff, na.rm=T))
+
+# get mean and sd ping rate in hours 
+print(round(as.numeric(mean(pingrate$meantdiff, na.rm=T))/60/60, digits = 2))
+print(round(as.numeric(sd(pingrate$meantdiff, na.rm=T))/60/60, digits = 2))
+
 ## get qualifying trips (bookended by confirmed haulout periods)
 df$eventID = NA
 df$eventID[is.na(df$HauloutID)] = paste("T-", df$TripID[is.na(df$HauloutID)], sep="")
@@ -36,11 +48,15 @@ hoL = split(df, df$id)
 qual_trip_ids = c()
 for (i in 1:length(hoL)){
   tmp = hoL[[i]]
+  tmp = arrange(tmp, datetime)
   events = unique(tmp$eventID)
   ht = sapply(strsplit(events, "-"), "[", 1)
+  # get indices of H and T
   ts = which(ht == "T")
   hs = which(ht=="H")
-  
+  print(all(diff(ts) == 2)) # ok good, these are all true
+  print(all(diff(hs) == 2))
+  # if the last trip index is greater than the last haulout index... then it does not qualify
   if (ts[length(ts)] > hs[length(hs)]){
     quals = ts[1:length(ts)-1]
   }else{quals = ts}
@@ -73,10 +89,29 @@ completetripids = segsum$TripID[which(segsum$NSegQual == segsum$NSegTotal)]
 # downstream: will use qual_trip_ids + completetripids to subset the modeled trips for any TRIP Level analysis that requires complete qualifying trips... 
 # for dive analyses, we still want modeled partial trips.
 
+# get number of modeled positions for complete and qualifying trips
+completequaltrips = intersect(completetripids, qual_trip_ids)
+
+# Compare the number of positions modeled for completed, qualifying trips in the pre-construction phase analysis
+analysespos = df_ %>% filter(TripID %in% completequaltrips) %>% group_by(TripID) %>% mutate(tripend = max(datetime)) %>%
+  filter(tripend < as.POSIXct(strptime(x = '2023-06-01 00:00:00', format = '%Y-%m-%d %H:%M:%S', tz = 'UTC')))
+n_distinct(analysespos$id)
+n_distinct(analysespos$TripID)
+
+# to the total possible positions (those positions from all trips ending prior to the construction date cutoff)
+totalpos = df_ %>% group_by(TripID) %>% mutate(tripend = max(datetime)) %>%
+  filter(tripend < as.POSIXct(strptime(x = '2023-06-01 00:00:00', format = '%Y-%m-%d %H:%M:%S', tz = 'UTC')))
+
+round(nrow(analysespos) / nrow(totalpos)*100) # 90%
 ########################################################### fit ssm-crw #####################################################################
 
 # model each trip segment
 anilocs = df_[,c('SegID', 'datetime', 'lc','lon', "lat", "error.radius", 'smaj', "smin", "eor")]
+
+# segdurs = anilocs %>% group_by(SegID) %>% summarise(segdur = as.numeric(difftime(max(datetime), min(datetime), tz = 'UTC', units = 'days')))
+# segdurs$ptt = sapply(strsplit(segdurs$SegID, '-'), '[[', 1)
+# meansegdursperptt = segdurs %>% group_by(ptt) %>% summarise(meansegdur = mean(segdur))
+
 colnames(anilocs)[c(1,2)] = c('id', 'date')
 aniList = split(anilocs, anilocs$id)
 

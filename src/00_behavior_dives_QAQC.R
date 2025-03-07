@@ -267,7 +267,7 @@ write.csv(x = IDI,
 # First eliminate by the data cutoffdates
 IDI = left_join(IDI, meta, by = 'ptt') %>% filter(start_Dive >= cutoffstart, end_Surface <= cutoffend)
 
-# Eliminate dives > 15 minutes following Beck et al., 2003 and our own unpublished 2014 data
+# Eliminate dives > 15 minutes following Beck et al., 2003 and our own unpublished 2024 data
 # Eliminate dives deeper than 455 meters (Jessopp et al. 2013) - max recorded depth for the species
 idisub = IDI[which(IDI$DiveDur/60 < 15), ]
 idisub = idisub[which(idisub$Depth <= 455),]
@@ -277,6 +277,7 @@ idisub = idisub[which(idisub$Depth >= 5), ]
 # 806 dives with durations over 15 minutes...
 length(which(IDI$DiveDur/60 >= 15))
 nrow(IDI) - nrow(idisub) #eliminated 6479 dives
+100*(1 - nrow(idisub) / nrow(IDI))
 ########################## EXPLORATORY PLOTS ############################
 
 length(which(idisub$DiveDur/60 > 8)) / nrow(idisub) * 100
@@ -309,6 +310,8 @@ hist(beh$duration, breaks = 50, xlim = c(0,15),xlab = 'Maximum Dive Duration (mi
 print(paste('Max Dive Duration Recorded: ', max(beh$duration), 'min; at a depth of:', 
             round(beh$Depth[beh$duration == max(beh$duration)]), ' meters, and a surface interval of: ',
             round(beh$IDI[beh$duration == max(beh$duration)]/60)))
-
+# number of dive records
+nrow(beh[beh$start_Dive < as.POSIXct('2023-06-01 00:00:00', tz = 'UTC'),])
+n_distinct(beh$ptt)
 
 write.csv(x = beh, file = './data/L1/dive/Hg_2019-2023_BEHDiveRecords_QAQC.csv', row.names = FALSE)

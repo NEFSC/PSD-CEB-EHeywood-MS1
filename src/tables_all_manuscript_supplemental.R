@@ -209,7 +209,7 @@ save_as_docx(ft, path = "./plots/manuscript/TableS2.docx", pr_section = sect_pro
 
 
 ##################################################################################################################################
-################################### SUPPLEMENTAL TABLE 3: HAULOUT STATISTICS #####################################################
+################################### SUPPLEMENTAL TABLE S1-3: HAULOUT STATISTICS #####################################################
 ##################################################################################################################################
 rm(list = setdiff(ls(), 'sect_properties'))
 
@@ -264,6 +264,75 @@ ft <- align(ft, part = 'body',align = "center")
 ft = autofit(ft)
 ft
 save_as_docx(ft, path = "~/seal_telemetry/plots/manuscript/TableS3.docx", pr_section = sect_properties)
+
+##################################################################################################################################
+################################### SUPPLEMENTAL TABLE S4-1 & S4-2: DIVE DATA SAMPLE SIZES ##############################################
+##################################################################################################################################
+# ALL DIVES INCLUDING THOSE WE COULD NOT MODEL
+rm(list = setdiff(x = ls(), y = c('meta', 'sect_properties')))
+# Calculate the mean max depth, duration, IDI daily for each PTT
+alldives = read_csv('./data/L1/dive/Hg_2019-2023_BEHDiveRecords_QAQC.csv')
+
+# Subset to pre-construction
+d = alldives[which(alldives$start_Dive < as.POSIXct('2023-06-01', tz = 'UTC')),]
+d$ptt = sapply(strsplit(d$SDPairID, '-'), '[[', 1)
+# by season
+d$month = format(d$start_Dive, '%b')
+d$month = factor(d$month, levels = c('Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'))
+d$season = NA
+d$season[d$month %in% c('Jan', 'Feb', 'Dec')] = 'winter'
+d$season[d$month %in% c('Mar', 'Apr', 'May')] = 'spring'
+d$season[d$month %in% c('Jun', 'Jul', 'Aug')] = 'summer'
+d$season[d$month %in% c('Sep', 'Oct', 'Nov')] = 'fall'
+d$season = factor(d$season, levels = c('winter', 'spring', 'summer', 'fall'))
+t = d %>% group_by(season, month, sex) %>% summarise(N = n_distinct(ptt), `n dives` = n_distinct(SDPairID))
+sum(t$`n dives`) #174470
+# Get sex symbols
+t$sex <- ifelse(t$sex == "M", "\u2642", "\u2640")
+
+ft = flextable::flextable(t)
+
+# Center the header text
+ft <- align(ft, part = "header", i = c(1,2),align = "center")
+ft <- align(ft, part = 'body',align = "center")
+
+ft = autofit(ft)
+ft
+save_as_docx(ft, path = "~/seal_telemetry/plots/manuscript/TableS4-1_alldivesamplesize.docx", pr_section = sect_properties)
+
+
+# ONLY MODELED DIVES
+rm(list = setdiff(x = ls(), y = c('meta', 'sect_properties')))
+# Calculate the mean max depth, duration, IDI daily for each PTT
+modeleddives = read_csv('./data/L3/dive/Hg_2019-2023_DiveTypeClassification.csv')
+
+# Subset to pre-construction
+d = modeleddives[which(modeleddives$date < as.POSIXct('2023-06-01', tz = 'UTC')),]
+
+# by season
+d$month = format(d$date, '%b')
+d$month = factor(d$month, levels = c('Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'))
+d$season = NA
+d$season[d$month %in% c('Jan', 'Feb', 'Dec')] = 'winter'
+d$season[d$month %in% c('Mar', 'Apr', 'May')] = 'spring'
+d$season[d$month %in% c('Jun', 'Jul', 'Aug')] = 'summer'
+d$season[d$month %in% c('Sep', 'Oct', 'Nov')] = 'fall'
+d$season = factor(d$season, levels = c('winter', 'spring', 'summer', 'fall'))
+t = d %>% group_by(season, month, sex) %>% summarise(N = n_distinct(ptt), `n dives` = n_distinct(diveID))
+sum(t$`n dives`) #123792
+# Get sex symbols
+t$sex <- ifelse(t$sex == "M", "\u2642", "\u2640")
+
+ft = flextable::flextable(t)
+
+# Center the header text
+ft <- align(ft, part = "header", i = c(1,2),align = "center")
+ft <- align(ft, part = 'body',align = "center")
+
+ft = autofit(ft)
+ft
+save_as_docx(ft, path = "~/seal_telemetry/plots/manuscript/TableS4-2_modeleddivesamplesize.docx", pr_section = sect_properties)
+
 
 
 ######### SCRATCH 
